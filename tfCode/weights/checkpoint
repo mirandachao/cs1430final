@@ -1,2 +1,2 @@
-model_checkpoint_path: "rightY"
-all_model_checkpoint_paths: "rightY"
+model_checkpoint_path: "leftY"
+all_model_checkpoint_paths: "leftY"

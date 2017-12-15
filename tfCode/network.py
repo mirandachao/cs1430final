@@ -109,25 +109,87 @@ class net():
 class netIm():
 
 	def __init__(self):
-		self.hiddenSz1 = 50
+		self.hiddenSz1 = 300
 		self.hiddenSz2 = 25
 		self.keepPrb1 = 0.9
 		self.keepPrb2 = 0.3
-		self.learning_rate = 0.001
-		self.sizeOfTupleInput = 1
+		self.learning_rate = 0.00001
+		self.rows = 24
+		self.cols = 24
+		self.conv1Sz = 3
+		self.conv1Channels = 15
+		self.max1PoolSz = 2
+		self.channelsIn = 1
 		self.batchSz = 1
 		self.trainingEpochs = 1
 		self.outputSz = 1
 
+	def train(self, inny, ansy, label):
+		inpt, ans, wc1, conv1, conv1Relu, max1, conv1Drop, newRowSize, newColSize, matMulShape, \
+		W1, b1, l1Out, L1Out, L1OutDrop, W2, b2, out, loss, sgd, train_op = self.model1(self.batchSz)
+
+		saver = tf.train.Saver()
+
+		session = tf.Session()
+		session.run(tf.global_variables_initializer())
+		print "Training the", label
+		numbBatches = int(np.floor(1000/self.batchSz))
+		for j in range(self.trainingEpochs):
+			print "Training Epoch: ", j
+			avgLoss = 0.0
+			for i in xrange(numbBatches):
+				lowInd = i*self.batchSz
+				#print(lowInd)
+				diction = {inpt: inny[lowInd:lowInd+self.batchSz,:,:,:], ans: ansy[lowInd:lowInd+self.batchSz]}
+				_, losses, outy = session.run([train_op, loss, out], feed_dict=diction)
+				print(outy)
+
+				avgLoss += losses[0]
+				if (i%(8000/self.batchSz) == 0):
+					print "Percent complete: ", int((i/float(numbBatches))*100)
+			print "Loss: ", avgLoss/(numbBatches*self.batchSz)
+
+		save_path = saver.save(session, "./weights/"+label)
+
+	def eval(self, inny, ansy, label):
+		tf.reset_default_graph()
+
+		inpt, ans, wc1, conv1, conv1Relu, max1, conv1Drop, newRowSize, newColSize, matMulShape, \
+		W1, b1, l1Out, L1Out, L1OutDrop, W2, b2, out, loss, sgd, train_op = self.model1(999)
+
+		saver = tf.train.Saver()
+
+		sess = tf.Session()
+
+		saver.restore(sess, "./weights/"+label)
+		print "Evaluating the", label
+		diction = {inpt: inny, ans: ansy}
+		#avgLoss = lossOut/len(inny)
+		#print("Avg dist from truth : %s" % avgLoss)
+		return sess.run(out, diction)
+
+
 	def model1(self, size):
-		inpt = tf.placeholder(tf.float32, [size, self.sizeOfTupleInput])
+		inpt = tf.placeholder(tf.float32, [size, self.rows, self.cols, self.channelsIn])
 		ans = tf.placeholder(tf.float32, [size])
 
-		W1 = tf.Variable(tf.random_normal([self.sizeOfTupleInput, self.hiddenSz1], stddev=.1))
+		out = tf.reduce_sum(ans)/size
+		
+
+		wc1 = tf.Variable(tf.random_normal([self.conv1Sz, self.conv1Sz, self.channelsIn, self.conv1Channels], stddev=.1))
+		conv1 = tf.nn.conv2d(inpt, wc1, [1,1,1,1], 'VALID') 
+		conv1Relu = tf.nn.relu(conv1)
+		max1 = tf.nn.max_pool(conv1Relu, [1, self.max1PoolSz, self.max1PoolSz, 1], [1, 2, 2, 1], 'VALID')
+		conv1Drop = tf.nn.dropout(max1, self.keepPrb1)
+		newRowSize = (self.rows-(self.conv1Sz-1))/self.max1PoolSz
+		newColSize = (self.cols-(self.conv1Sz-1))/self.max1PoolSz
+		matMulShape = tf.reshape(conv1Drop, [size, newRowSize * newColSize * self.conv1Channels])
+
+		W1 = tf.Variable(tf.random_normal([newRowSize * newColSize * self.conv1Channels, self.hiddenSz1], stddev=.1))
 		b1 = tf.Variable(tf.random_normal([self.hiddenSz1], stddev=.1))
-		l1Out = tf.matmul(inpt, W1) + b1
+		l1Out = tf.matmul(matMulShape, W1) + b1
 		L1Out = tf.nn.relu(l1Out)
-		L1OutDrop = tf.nn.dropout(L1Out, self.keepPrb1)
+		L1OutDrop = tf.nn.dropout(L1Out, self.keepPrb2)
 		W2 = tf.Variable(tf.random_normal([self.hiddenSz1, self.outputSz], stddev=.1))
 		b2 = tf.Variable(tf.random_normal([self.outputSz], stddev=.1))
 		out = tf.nn.sigmoid(tf.matmul(L1OutDrop,W2)+b2)
@@ -136,5 +198,6 @@ class netIm():
 		loss = tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(ans, out)), 1)) 
 		sgd = tf.train.AdamOptimizer(self.learning_rate)
 		train_op = sgd.minimize(loss)
-		return [inpt, ans, W1, b1, l1Out, L1Out, L1OutDrop, W2, b2, out, loss, sgd, train_op]
+		return [inpt, ans, wc1, conv1, conv1Relu, max1, conv1Drop, newRowSize, newColSize, matMulShape, W1, b1, l1Out, L1Out, L1OutDrop, W2, b2, out, loss, sgd, train_op]
 
+		#"""
