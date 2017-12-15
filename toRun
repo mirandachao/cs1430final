@@ -1,0 +1,7 @@
+#!/bin/sh
+source /course/cs1430/tf_gpu/bin/activate
+#$ -V
+#$ -cwd
+#$ -l gpus=1
+# -pe
+python /gpfs/main/home/adaoud/Desktop/CompVis/finalProj/run.py
