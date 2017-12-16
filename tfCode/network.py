@@ -233,7 +233,7 @@ class netImAndLoc():
                                 _, losses, outy = session.run([train_op, loss, wVal], feed_dict=diction)
                                 #print(outy)
 
-                                avgLoss += losses
+                                avgLoss += np.sqrt(losses)
                                 if (i%(8000/self.batchSz) == 0):
                                         print "Percent complete: ", int((i/float(numbBatches))*100)
                         print "Loss: ", avgLoss/(numbBatches*self.batchSz)

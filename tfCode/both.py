@@ -17,8 +17,8 @@ eyeWidth = 24
 eyeHeight = 24
 imageWidth = 640
 imageHeight = 480
-numbTrainImgs = 69516
-numbTestImgs = 27782
+numbTrainImgs = 76046
+numbTestImgs = 21252
 leftArr = np.zeros([numbTrainImgs, eyeHeight, eyeWidth, 1], dtype= np.uint8)
 leftPosX = np.zeros([numbTrainImgs])
 leftAnsX = np.zeros([numbTrainImgs], dtype= np.uint8)
@@ -31,7 +31,6 @@ rightAnsY = np.zeros([numbTrainImgs], dtype= np.uint8)
 rightPosY = np.zeros([numbTrainImgs])
 
 error = 0.0
-count = 0.0
 trf = open( trainFile, "r" )
 print "Obtaining Training Data..."
 imgIndex = 0
@@ -90,14 +89,13 @@ for subDir in trf:
 			rightAnsX[imgIndex] = tobiiRightEyeGazeX
 			rightAnsY[imgIndex] = tobiiRightEyeGazeY
 
-			count += 1.0
 			error += math.sqrt(math.pow(tobiiEyeGazeX-webgazerX, 2)+ math.pow(tobiiEyeGazeY-webgazerY, 2))
 			imgIndex += 1
 			if (imgIndex == breakVal):
 				break
 
 
-#print "Avg error: ", error/count
+print "Avg train error from webgazer: ", error/numbTrainImgs
 trf.close()
 
 network = netImAndLoc()
@@ -121,6 +119,7 @@ rightPosY = np.zeros([numbTestImgs])
 print("Obtaining Test Data...")
 tef = open( testFile, "r" )
 imgIndex = 0
+error = 0.0
 for subDir in tef:
         if (imgIndex == breakVal):
                 break
@@ -174,13 +173,12 @@ for subDir in tef:
 			rightAnsX[imgIndex] = tobiiRightEyeGazeX
 			rightAnsY[imgIndex] = tobiiRightEyeGazeY
 
-			count += 1.0
-			error += math.sqrt(math.pow(tobiiEyeGazeX-webgazerX, 2)+ math.pow(tobiiEyeGazeY-webgazerY, 2))
+			error += math.sqrt(math.pow((tobiiEyeGazeX-webgazerX)*imageWidth, 2)+ math.pow((tobiiEyeGazeY-webgazerY)*imageHeight, 2))
 			imgIndex += 1
 			if (imgIndex == breakVal):
 				break
 
-print "Avg error for webgazer on test set: ", error/numbTestImgs
+print "Avg pixel error for webgazer on test set: ", error/numbTestImgs
 
 leftGuessesX = network.eval(leftArr, leftPosX, np.zeros([numbTestImgs], dtype= np.uint8), "leftX")
 leftGuessesY = network.eval(leftArr, leftPosY, np.zeros([numbTestImgs], dtype= np.uint8), "leftY")
@@ -193,11 +191,11 @@ for i in range(len(leftGuessesX)):
 	guessY = (leftGuessesY[i]+rightGuessesY[i])/2
 	ansX = (leftAnsX[i]+rightAnsX[i])/2
 	ansY = (leftAnsY[i]+rightAnsY[i])/2
-	err += math.sqrt(math.pow(guessX-ansX, 2.0)+math.pow(guessY-ansY, 2.0))
+	err += math.sqrt(math.pow((guessX-ansX)*imageWidth, 2.0)+math.pow((guessY-ansY)*imageHeight, 2.0))
 
 err = err/numbTestImgs
 
-print "Final error on test: ", err
+print "Final pixel error on test: ", err
 
 
 
