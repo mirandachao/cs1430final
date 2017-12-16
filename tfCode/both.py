@@ -3,7 +3,7 @@ import csv
 import cv2
 import math
 import numpy as np
-from network import net, netIm
+from network import net, netIm, netImAndLoc
 from PIL import Image
 import time
 
@@ -20,19 +20,24 @@ imageHeight = 480
 numbTrainImgs = 69516
 numbTestImgs = 27782
 leftArr = np.zeros([numbTrainImgs, eyeHeight, eyeWidth, 1], dtype= np.uint8)
+leftPosX = np.zeros([numbTrainImgs])
 leftAnsX = np.zeros([numbTrainImgs], dtype= np.uint8)
 rightArr = np.zeros([numbTrainImgs, eyeHeight, eyeWidth, 1], dtype= np.uint8)
 rightAnsX = np.zeros([numbTrainImgs], dtype= np.uint8)
+rightPosX = np.zeros([numbTrainImgs])
 leftAnsY = np.zeros([numbTrainImgs], dtype= np.uint8)
+leftPosY = np.zeros([numbTrainImgs])
 rightAnsY = np.zeros([numbTrainImgs], dtype= np.uint8)
+rightPosY = np.zeros([numbTrainImgs])
 
 error = 0.0
 count = 0.0
 trf = open( trainFile, "r" )
 print "Obtaining Training Data..."
 imgIndex = 0
-breakVal = 10000000
+breakVal = 1000000
 for subDir in trf:
+	break
 	if (imgIndex == breakVal):
 		break
 	with open( subDir.strip() + "/" + dataFile ) as f:
@@ -75,6 +80,11 @@ for subDir in trf:
 			leftArr[imgIndex, :, :, :] = np.expand_dims(leftEye, axis=3)
 			rightArr[imgIndex, :, :, :] = np.expand_dims(rightEye, axis=3)
 
+			leftPosX[imgIndex] = leftEyeX/imageWidth
+			leftPosY[imgIndex] = leftEyeY/imageHeight
+			rightPosX[imgIndex] = rightEyeX/imageWidth
+			rightPosY[imgIndex] = rightEyeY/imageHeight
+
 			leftAnsX[imgIndex] = tobiiLeftEyeGazeX
 			leftAnsY[imgIndex] = tobiiLeftEyeGazeY
 			rightAnsX[imgIndex] = tobiiRightEyeGazeX
@@ -87,22 +97,26 @@ for subDir in trf:
 				break
 
 
-print "Avg error: ", error/count
+#print "Avg error: ", error/count
 trf.close()
 
-network = netIm()
-network.train(leftArr, np.array(leftAnsX), "leftX")
-network.train(leftArr, np.array(leftAnsY), "leftY")
-network.train(rightArr, np.array(rightAnsX), "rightX")
-network.train(rightArr, np.array(rightAnsY), "rightY")
+network = netImAndLoc()
+#network.train(leftArr, leftPosX, np.array(leftAnsX), "leftX")
+#network.train(leftArr, leftPosY, np.array(leftAnsY), "leftY")
+#network.train(rightArr, rightPosX, np.array(rightAnsX), "rightX")
+#network.train(rightArr, rightPosY, np.array(rightAnsY), "rightY")
 
 
-leftArr = np.zeros([numbTestImgs, 24, 24, 1], dtype= np.uint8)
+leftArr = np.zeros([numbTestImgs, eyeHeight, eyeWidth, 1], dtype= np.uint8)
+leftPosX = np.zeros([numbTestImgs])
 leftAnsX = np.zeros([numbTestImgs], dtype= np.uint8)
-rightArr = np.zeros([numbTestImgs, 24, 24, 1], dtype= np.uint8)
+rightArr = np.zeros([numbTestImgs, eyeHeight, eyeWidth, 1], dtype= np.uint8)
 rightAnsX = np.zeros([numbTestImgs], dtype= np.uint8)
+rightPosX = np.zeros([numbTestImgs])
 leftAnsY = np.zeros([numbTestImgs], dtype= np.uint8)
+leftPosY = np.zeros([numbTestImgs])
 rightAnsY = np.zeros([numbTestImgs], dtype= np.uint8)
+rightPosY = np.zeros([numbTestImgs])
 
 print("Obtaining Test Data...")
 tef = open( testFile, "r" )
@@ -129,6 +143,7 @@ for subDir in tef:
 			leftEyeY = clmTrackerInt[55]
 			rightEyeX = clmTrackerInt[64]
 			rightEyeY = clmTrackerInt[65]
+
 			im = Image.open(directory + row[0][1:], 'r')
 			boxLeft = (leftEyeX-12, leftEyeY-12, leftEyeX+12, leftEyeY+12)
 			boxRight = (rightEyeX-12, rightEyeY-12, rightEyeX+12, rightEyeY+12)
@@ -149,6 +164,11 @@ for subDir in tef:
 			leftArr[imgIndex, :, :, :] = np.expand_dims(leftEye, axis=3)
 			rightArr[imgIndex, :, :, :] = np.expand_dims(rightEye, axis=3)
 
+                        leftPosX[imgIndex] = leftEyeX/imageWidth
+                        leftPosY[imgIndex] = leftEyeY/imageHeight
+                        rightPosX[imgIndex] = rightEyeX/imageWidth
+                        rightPosY[imgIndex] = rightEyeY/imageHeight
+
 			leftAnsX[imgIndex] = tobiiLeftEyeGazeX
 			leftAnsY[imgIndex] = tobiiLeftEyeGazeY
 			rightAnsX[imgIndex] = tobiiRightEyeGazeX
@@ -160,11 +180,12 @@ for subDir in tef:
 			if (imgIndex == breakVal):
 				break
 
+print "Avg error for webgazer on test set: ", error/numbTestImgs
 
-leftGuessesX = network.eval(leftArr,  np.array(leftAnsX), "leftX")
-leftGuessesY = network.eval(leftArr,  np.array(leftAnsY), "leftY")
-rightGuessesX = network.eval(rightArr,  np.array(rightAnsX), "rightX")
-rightGuessesY = network.eval(rightArr, np.array(rightAnsY), "rightY")
+leftGuessesX = network.eval(leftArr, leftPosX, np.zeros([numbTestImgs], dtype= np.uint8), "leftX")
+leftGuessesY = network.eval(leftArr, leftPosY, np.zeros([numbTestImgs], dtype= np.uint8), "leftY")
+rightGuessesX = network.eval(rightArr, rightPosX, np.zeros([numbTestImgs], dtype= np.uint8), "rightX")
+rightGuessesY = network.eval(rightArr, rightPosY, np.zeros([numbTestImgs], dtype= np.uint8), "rightY")
 
 err = 0.0
 for i in range(len(leftGuessesX)):
@@ -174,7 +195,7 @@ for i in range(len(leftGuessesX)):
 	ansY = (leftAnsY[i]+rightAnsY[i])/2
 	err += math.sqrt(math.pow(guessX-ansX, 2.0)+math.pow(guessY-ansY, 2.0))
 
-err = err/len(leftGuessesX)
+err = err/numbTestImgs
 
 print "Final error on test: ", err
 
