@@ -4,7 +4,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-class net():
+class netOld1():
 
 	def __init__(self):
 		self.hiddenSz1 = 50
@@ -106,7 +106,7 @@ class net():
 
 
 
-class netIm():
+class netOld2():
 
 	def __init__(self):
 		self.hiddenSz1 = 16
@@ -194,7 +194,7 @@ class netIm():
 		return [inpt, ans, wc1, conv1, avg, newRowSize, newColSize, matMulShape, W1, b1, l1Out, W2, b2, out, loss, sgd, train_op]
 
 
-class netImAndLoc():
+class net():
 
         def __init__(self):
                 self.hiddenSz1 = 16
@@ -243,7 +243,7 @@ class netImAndLoc():
         def eval(self, inny, posy, ansy, label):
                 tf.reset_default_graph()
 
-                inpt, ans, pos, wc1, conv1, avg, newRowSize, newColSize, matMulShape, W1, b1, l1Out, W2, b2, val, wVal, wPos, out, loss, sgd, train_op = self.model1(self.batchSz)#len(inny))
+                inpt, ans, pos, wc1, conv1, avg, newRowSize, newColSize, matMulShape, W1, b1, l1Out, W2, b2, val, wVal, wPos, out, loss, sgd, train_op = self.model1(self.batchSz)
 
                 saver = tf.train.Saver()
 

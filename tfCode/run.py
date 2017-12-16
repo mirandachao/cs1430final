@@ -4,6 +4,8 @@ import cv2
 import math
 import numpy as np
 from network import net
+from PIL import Image
+import time
 
 directory = '/course/cs1430/datasets/webgazer/framesdataset'
 dataFile = "gazePredictions.csv"
@@ -11,27 +13,37 @@ dataFile = "gazePredictions.csv"
 trainFile = "train.txt"
 testFile = "test.txt"
 
+eyeWidth = 24
+eyeHeight = 24
 imageWidth = 640
 imageHeight = 480
-leftArrX = []
-leftAnsX = []
-rightArrX = []
-rightAnsX = []
-leftArrY = []
-leftAnsY = []
-rightArrY = []
-rightAnsY = []
+numbTrainImgs = 59413
+numbTestImgs = 37885
+leftArr = np.zeros([numbTrainImgs, eyeHeight, eyeWidth, 1], dtype= np.uint8)
+leftPosX = np.zeros([numbTrainImgs])
+leftAnsX = np.zeros([numbTrainImgs], dtype= np.uint8)
+rightArr = np.zeros([numbTrainImgs, eyeHeight, eyeWidth, 1], dtype= np.uint8)
+rightAnsX = np.zeros([numbTrainImgs], dtype= np.uint8)
+rightPosX = np.zeros([numbTrainImgs])
+leftAnsY = np.zeros([numbTrainImgs], dtype= np.uint8)
+leftPosY = np.zeros([numbTrainImgs])
+rightAnsY = np.zeros([numbTrainImgs], dtype= np.uint8)
+rightPosY = np.zeros([numbTrainImgs])
 
 error = 0.0
-count = 0.0
 trf = open( trainFile, "r" )
 print "Obtaining Training Data..."
+imgIndex = 0
+breakVal = 1000000
 for subDir in trf:
+#	break
+	if (imgIndex == breakVal):
+		break
 	with open( subDir.strip() + "/" + dataFile ) as f:
 		V = csv.reader(f, delimiter=',')
 		readCSV = csv.reader(f, delimiter=',')
+		gg = 0
 		for row in readCSV:
-			#exit()
 			# Tobii has been calibrated such that 0,0 is top left and 1,1 is bottom right on the display.
 			tobiiLeftEyeGazeX = float( row[2] )
 			tobiiLeftEyeGazeY = float( row[3] )
@@ -46,57 +58,71 @@ for subDir in trf:
 			leftEyeY = clmTrackerInt[55]
 			rightEyeX = clmTrackerInt[64]
 			rightEyeY = clmTrackerInt[65]
+			im = Image.open(directory + row[0][1:], 'r')
+			boxLeft = (leftEyeX-eyeWidth/2, leftEyeY-eyeHeight/2, leftEyeX+eyeWidth/2, leftEyeY+eyeHeight/2)
+			boxRight = (rightEyeX-eyeWidth/2, rightEyeY-eyeHeight/2, rightEyeX+eyeWidth/2, rightEyeY+eyeHeight/2)
+			tmpL = im.crop(boxLeft).convert('L')
+			tmpR = im.crop(boxRight).convert('L')
+			leftEye = np.asarray(tmpL, dtype= np.uint8)
+			#print(leftEye.shape)
+			#tmpL.save('./pics/' + str(gg) + "testL.png")
+			rightEye = np.asarray(tmpR, dtype= np.uint8)
+			#tmpR.save('./pics/'+str(gg)+"testR.png")
+			#gg += 1
+			#if (gg==1000):
+			#	break
+			#	exit()
 
 			tobiiEyeGazeX = (tobiiLeftEyeGazeX + tobiiRightEyeGazeX) / 2
 			tobiiEyeGazeY = (tobiiLeftEyeGazeY + tobiiRightEyeGazeY) / 2
 
-			npClm = np.array(clmTracker) 
-			#upperLeftEye
-			leftX = np.array([])#npClm[46:50]
-			leftX = (np.append(leftX, npClm[54]))/imageWidth
+			leftArr[imgIndex, :, :, :] = np.expand_dims(leftEye, axis=3)
+			rightArr[imgIndex, :, :, :] = np.expand_dims(rightEye, axis=3)
 
-			leftY = np.array([])#npClm[46:50]
-			leftY = (np.append(leftY, npClm[55]))/imageHeight
-			
-			#upperRightEye
-			rightX = np.array([])#npClm[56:60]
-			rightX = (np.append(rightX, npClm[64]))/imageWidth
+			leftPosX[imgIndex] = leftEyeX/imageWidth
+			leftPosY[imgIndex] = leftEyeY/imageHeight
+			rightPosX[imgIndex] = rightEyeX/imageWidth
+			rightPosY[imgIndex] = rightEyeY/imageHeight
 
-			rightY = np.array([])#npClm[56:60]
-			rightY = (np.append(rightY, npClm[65]))/imageHeight
+			leftAnsX[imgIndex] = tobiiLeftEyeGazeX
+			leftAnsY[imgIndex] = tobiiLeftEyeGazeY
+			rightAnsX[imgIndex] = tobiiRightEyeGazeX
+			rightAnsY[imgIndex] = tobiiRightEyeGazeY
 
-			leftArrX.append(leftX)
-			leftArrY.append(leftY)
-			rightArrX.append(rightX)
-			rightArrY.append(rightY)
-			#print(leftArrX)
-			#exit()
-			#leftArrX.append(leftEyeX/imageWidth)
-			#leftArrY.append(leftEyeY/imageHeight)
-			leftAnsX.append(tobiiLeftEyeGazeX)
-			leftAnsY.append(tobiiLeftEyeGazeY)
-			#rightArrX.append(rightEyeX/imageWidth)
-			#rightArrY.append(rightEyeY/imageHeight)
-			rightAnsX.append(tobiiRightEyeGazeX)
-			rightAnsY.append(tobiiRightEyeGazeY)
-
-			count += 1.0
 			error += math.sqrt(math.pow(tobiiEyeGazeX-webgazerX, 2)+ math.pow(tobiiEyeGazeY-webgazerY, 2))
+			imgIndex += 1
+			if (imgIndex == breakVal):
+				break
 
 
-print "Avg error: ", error/count
+print "Avg train error from webgazer: ", error/numbTrainImgs
 trf.close()
 
 network = net()
-network.train(np.array(leftArrX), np.array(leftAnsX), "leftX")
-network.train(np.array(leftArrY), np.array(leftAnsY), "leftY")
-network.train(np.array(rightArrX), np.array(rightAnsX), "rightX")
-network.train(np.array(rightArrY), np.array(rightAnsY), "rightY")
+network.train(leftArr, leftPosX, np.array(leftAnsX), "leftX")
+network.train(leftArr, leftPosY, np.array(leftAnsY), "leftY")
+network.train(rightArr, rightPosX, np.array(rightAnsX), "rightX")
+network.train(rightArr, rightPosY, np.array(rightAnsY), "rightY")
 
 
+leftArr = np.zeros([numbTestImgs, eyeHeight, eyeWidth, 1], dtype= np.uint8)
+leftPosX = np.zeros([numbTestImgs])
+leftAnsX = np.zeros([numbTestImgs], dtype= np.uint8)
+rightArr = np.zeros([numbTestImgs, eyeHeight, eyeWidth, 1], dtype= np.uint8)
+rightAnsX = np.zeros([numbTestImgs], dtype= np.uint8)
+rightPosX = np.zeros([numbTestImgs])
+leftAnsY = np.zeros([numbTestImgs], dtype= np.uint8)
+leftPosY = np.zeros([numbTestImgs])
+rightAnsY = np.zeros([numbTestImgs], dtype= np.uint8)
+rightPosY = np.zeros([numbTestImgs])
+
+print("Obtaining Test Data...")
 tef = open( testFile, "r" )
-
+imgIndex = 0
+error = 0.0
 for subDir in tef:
+        if (imgIndex == breakVal):
+                break
 	with open( subDir.strip() + "/" + dataFile ) as f:
 		V = csv.reader(f, delimiter=',')
 		readCSV = csv.reader(f, delimiter=',')
@@ -117,46 +143,47 @@ for subDir in tef:
 			rightEyeX = clmTrackerInt[64]
 			rightEyeY = clmTrackerInt[65]
 
+			im = Image.open(directory + row[0][1:], 'r')
+			boxLeft = (leftEyeX-12, leftEyeY-12, leftEyeX+12, leftEyeY+12)
+			boxRight = (rightEyeX-12, rightEyeY-12, rightEyeX+12, rightEyeY+12)
+			tmpL = im.crop(boxLeft).convert('L')
+			tmpR = im.crop(boxRight).convert('L')
+			leftEye = np.asarray(tmpL, dtype= np.uint8)
+			#print(leftEye.shape)
+			#tmpL.save('./pics/' + str(gg) + "testL.png")
+			rightEye = np.asarray(tmpR, dtype= np.uint8)
+			#tmpR.save('./pics/'+str(gg)+"testR.png")
+			#gg += 1
+			#if (gg==100):
+			#	exit()
+
 			tobiiEyeGazeX = (tobiiLeftEyeGazeX + tobiiRightEyeGazeX) / 2
 			tobiiEyeGazeY = (tobiiLeftEyeGazeY + tobiiRightEyeGazeY) / 2
 
-			npClm = np.array(clmTracker) 
-			#upperLeftEye
-			leftX = np.array([])#npClm[46:50]
-			leftX = (np.append(leftX, npClm[54]))/imageWidth
+			leftArr[imgIndex, :, :, :] = np.expand_dims(leftEye, axis=3)
+			rightArr[imgIndex, :, :, :] = np.expand_dims(rightEye, axis=3)
 
-			leftY = np.array([])#npClm[46:50]
-			leftY = (np.append(leftY, npClm[55]))/imageHeight
-			
-			#upperRightEye
-			rightX = np.array([])#npClm[56:60]
-			rightX = (np.append(rightX, npClm[64]))/imageWidth
+                        leftPosX[imgIndex] = leftEyeX/imageWidth
+                        leftPosY[imgIndex] = leftEyeY/imageHeight
+                        rightPosX[imgIndex] = rightEyeX/imageWidth
+                        rightPosY[imgIndex] = rightEyeY/imageHeight
 
-			rightY = np.array([])#npClm[56:60]
-			rightY = (np.append(rightY, npClm[65]))/imageHeight
+			leftAnsX[imgIndex] = tobiiLeftEyeGazeX
+			leftAnsY[imgIndex] = tobiiLeftEyeGazeY
+			rightAnsX[imgIndex] = tobiiRightEyeGazeX
+			rightAnsY[imgIndex] = tobiiRightEyeGazeY
 
-			leftArrX.append(leftX)
-			leftArrY.append(leftY)
-			rightArrX.append(rightX)
-			rightArrY.append(rightY)
+			error += math.sqrt(math.pow((tobiiEyeGazeX-webgazerX)*imageWidth, 2)+ math.pow((tobiiEyeGazeY-webgazerY)*imageHeight, 2))
+			imgIndex += 1
+			if (imgIndex == breakVal):
+				break
 
-			#leftArrX.append(leftEyeX/imageWidth)
-			#leftArrY.append(leftEyeY/imageHeight)
-			leftAnsX.append(tobiiLeftEyeGazeX)
-			leftAnsY.append(tobiiLeftEyeGazeY)
-			#rightArrX.append(rightEyeX/imageWidth)
-			#rightArrY.append(rightEyeY/imageHeight)
-			rightAnsX.append(tobiiRightEyeGazeX)
-			rightAnsY.append(tobiiRightEyeGazeY)
+print "Avg pixel error for webgazer on test set: ", error/numbTestImgs
 
-			count += 1.0
-			error += math.sqrt(math.pow(tobiiEyeGazeX-webgazerX, 2)+ math.pow(tobiiEyeGazeY-webgazerY, 2))
-
-
-leftGuessesX = network.eval(np.array(leftArrX), np.array(leftAnsX), "leftX")
-leftGuessesY = network.eval(np.array(leftArrY), np.array(leftAnsY), "leftY")
-rightGuessesX = network.eval(np.array(rightArrX), np.array(rightAnsX), "rightX")
-rightGuessesY = network.eval(np.array(rightArrY), np.array(rightAnsY), "rightY")
+leftGuessesX = network.eval(leftArr, leftPosX, np.zeros([numbTestImgs], dtype= np.uint8), "leftX")
+leftGuessesY = network.eval(leftArr, leftPosY, np.zeros([numbTestImgs], dtype= np.uint8), "leftY")
+rightGuessesX = network.eval(rightArr, rightPosX, np.zeros([numbTestImgs], dtype= np.uint8), "rightX")
+rightGuessesY = network.eval(rightArr, rightPosY, np.zeros([numbTestImgs], dtype= np.uint8), "rightY")
 
 err = 0.0
 for i in range(len(leftGuessesX)):
@@ -164,11 +191,11 @@ for i in range(len(leftGuessesX)):
 	guessY = (leftGuessesY[i]+rightGuessesY[i])/2
 	ansX = (leftAnsX[i]+rightAnsX[i])/2
 	ansY = (leftAnsY[i]+rightAnsY[i])/2
-	err += math.sqrt(math.pow(guessX-ansX, 2.0)+math.pow(guessY-ansY, 2.0))
+	err += math.sqrt(math.pow((guessX-ansX)*imageWidth, 2.0)+math.pow((guessY-ansY)*imageHeight, 2.0))
 
-err = err/len(leftGuessesX)
+err = err/numbTestImgs
 
-print "Final error on test: ", err
+print "Final pixel error on test: ", err
 
 
 
