@@ -1,0 +1,12 @@
+		self.hiddenSz1 = 50
+		self.hiddenSz2 = 25
+		self.keepPrb1 = 0.9
+		self.keepPrb2 = 0.3
+		self.learning_rate = 0.001
+		self.sizeOfTupleInput = 1
+		self.batchSz = 1
+		self.trainingEpochs = 1
+		self.outputSz = 1
+
+with model1
+

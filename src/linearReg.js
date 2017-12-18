@@ -1,6 +1,7 @@
 'use strict';
 (function(window) {
     
+    console.log('test')
     window.webgazer = window.webgazer || {};
     webgazer.reg = webgazer.reg || {};
     webgazer.pupil = webgazer.pupil || {};

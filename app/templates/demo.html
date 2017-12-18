@@ -14,11 +14,14 @@
         </h1>
     </div>
 
+        <!--COMPUTER VISIONARIES-->
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
 
         <script src="{{url_for('static', filename='webgazer.js')}}"></script>
         <script>
 window.onload = function() {
-    webgazer.setRegression('ridge') /* currently must set regression and tracker */
+
+    webgazer.setRegression('computerVisionaries') /* currently must set regression and tracker */
         .setTracker('clmtrackr')
         .setGazeListener(function(data, clock) {
          //   console.log(data); /* data is an object containing an x and y key which are the x and y prediction coordinates (no bounds limiting) */

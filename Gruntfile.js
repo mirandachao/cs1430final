@@ -49,6 +49,7 @@ module.exports = function(grunt) {
 					'src/ridgeReg.js',
 					'src/ridgeWeightedReg.js',
 					'src/ridgeRegThreaded.js',
+					'src/computerVisionariesReg.js',
 					'src/util.js',
 					'src/webgazer.js',
 				],

@@ -75,7 +75,8 @@
         'ridge': function() { return new webgazer.reg.RidgeReg(); },
         'weightedRidge': function() { return new webgazer.reg.RidgeWeightedReg(); },
         'threadedRidge': function() { return new webgazer.reg.RidgeRegThreaded(); },
-        'linear': function() { return new webgazer.reg.LinearReg(); }
+        'linear': function() { return new webgazer.reg.LinearReg(); },
+        'computerVisionaries' : function() {return new webgazer.reg.ComputerVisionariesReg();}
     };
 
     //localstorage name
@@ -525,6 +526,8 @@
         regs[0].setData(data);
         return webgazer;
     };
+
+    webgazer.setComputerVisionariesRegression
 
     /**
      * Adds a new tracker module so that it can be used by setTracker()
