@@ -1,5 +1,6 @@
 from flask import Flask, render_template 
 from flask_socketio import SocketIO
+from random import randrange
 
 
  #Create app and set template folder to this
@@ -38,6 +39,12 @@ def predict(json):
     #print('received json: ' + str(json))
     return randrange(1, 300), randrange(1,300)
 
+
+@app.route('/api/predict')
+def tf_predict():
+	return 100, 200
+
+	
 #Home route
 @app.route('/')
 def home():
