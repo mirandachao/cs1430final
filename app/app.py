@@ -33,6 +33,11 @@ def connected(message):
     print(" * SocketIO connection established by webapp!")
 
 
+@socketio.on('predict')
+def predict(json):
+    #print('received json: ' + str(json))
+    return randrange(1, 300), randrange(1,300)
+
 #Home route
 @app.route('/')
 def home():
