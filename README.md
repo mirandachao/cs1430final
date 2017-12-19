@@ -4,6 +4,11 @@ We improve WebGazer by using a neural network with grayscale 24x24 pixel eye pat
 
 A nonfunctional, but running version of the model is included in the codebase.
 
+## Project Structure
+
+/build
+* contains the 
+
 ## Who We Are
 
 * Nicolas Choi
