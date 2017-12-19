@@ -38,6 +38,7 @@ module.exports = function(grunt) {
 					'dependencies/clmtrackr/svmfilter_webgl.js',
 					'dependencies/clmtrackr/svmfilter_fft.js',
 					'dependencies/clmtrackr/mossefilter.js',
+					'src/require.js',
 					'src/blinkDetector.js',
 					'src/clmGaze.js',
 					'src/trackingjsGaze.js',

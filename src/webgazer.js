@@ -12,6 +12,8 @@
     webgazer.params = webgazer.params || {};
 
     //PRIVATE VARIABLES
+    var isComputerVisionaries = true;
+
 
     //video elements
     webgazer.params.videoScale = 1;
@@ -144,8 +146,10 @@
             console.log('regression not set, call setRegression()');
             return null;
         }
+
         for (var reg in regs) {
             predictions.push(regs[reg].predict(features));
+
         }
         if (regModelIndex !== undefined) {
             return predictions[regModelIndex] === null ? null : {
@@ -161,10 +165,35 @@
         }
     }
 
+    function getComputerVisionariesPrediction(regModelIndex){
+        var predictions = [];
+        var features = getPupilFeatures(videoElementCanvas, webgazer.params.imgWidth, webgazer.params.imgHeight);
+        if (regs.length === 0) {
+            console.log('regression not set, call setRegression()');
+            return null;
+        }
+
+
+    
+        for (var reg in regs) {
+            predictions.push(regs[reg].predict(features));
+
+        }
+        if (regModelIndex !== undefined) {
+            return predictions[regModelIndex] === null ? null : {
+                'x' : predictions[regModelIndex].x,
+                'y' : predictions[regModelIndex].y
+            };
+        } else {
+            return predictions.length === 0 || predictions[0] === null ? null : predictions[0];
+        }
+        
+    }
     /**
      * Runs every available animation frame if webgazer is not paused
      */
     var smoothingVals = new webgazer.util.DataWindow(4);
+    /*
     function loop() {
         var gazeData = getPrediction();
         var elapsedTime = performance.now() - clockStart;
@@ -189,6 +218,80 @@
             requestAnimationFrame(loop);
         }
     }
+    */
+    
+    async function loop() {
+        
+        var d = isComputerVisionaries ? getComputerVisionariesPrediction() : getPrediction();
+
+    
+        //var p = null;
+        //var p = getComputerVisionariesPrediction();
+        //console.log('p: ', p);
+        if(d == null){
+            //var gazeData = getPrediction();
+            var elapsedTime = performance.now() - clockStart;
+            var gazeData = null;
+            callback(gazeData, elapsedTime);
+
+            if (gazeData && showGazeDot) {
+                smoothingVals.push(gazeData);
+                var x = 0;
+                var y = 0;
+                var len = smoothingVals.length;
+                for (var d in smoothingVals.data) {
+                    x += smoothingVals.get(d).x;
+                    y += smoothingVals.get(d).y;
+                }
+                var pred = webgazer.util.bound({'x':x/len, 'y':y/len});
+                gazeDot.style.transform = 'translate3d(' + pred.x + 'px,' + pred.y + 'px,0)';
+            }
+
+            if (!paused) {
+                //setTimeout(loop, webgazer.params.dataTimestep);
+                requestAnimationFrame(loop);
+            }
+
+        }else{
+            d.then(function(res){
+                //console.log("Yay!")
+
+
+                json = JSON.parse(res);
+                //console.log(res);
+                //var gazeData = {x:json.x, y:json.y};
+                var gazeData = {x:200, y:200}
+                //console.log(gazeData);
+                var elapsedTime = performance.now() - clockStart;
+
+                callback(gazeData, elapsedTime);
+
+                if (gazeData && showGazeDot) {
+                    smoothingVals.push(gazeData);
+                    var x = 0;
+                    var y = 0;
+                    var len = smoothingVals.length;
+                    for (var d in smoothingVals.data) {
+                        x += smoothingVals.get(d).x;
+                        y += smoothingVals.get(d).y;
+                    }
+                    var pred = webgazer.util.bound({'x':x/len, 'y':y/len});
+                    gazeDot.style.transform = 'translate3d(' + pred.x + 'px,' + pred.y + 'px,0)';
+                }
+                
+
+                if (!paused) {
+                    //setTimeout(loop, webgazer.params.dataTimestep);
+                    requestAnimationFrame(loop);
+                }
+            });
+
+        }
+        
+        
+
+    }
+        
 
     /**
      * Records screen position data based on current pupil feature and passes it
@@ -527,7 +630,6 @@
         return webgazer;
     };
 
-    webgazer.setComputerVisionariesRegression
 
     /**
      * Adds a new tracker module so that it can be used by setTracker()

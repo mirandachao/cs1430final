@@ -1,5 +1,24 @@
 'use strict';
 (function(window) {
+
+    /*
+    define(['require', 'http-promises/browser'], function (require) {
+        const http = require('http-promises/browser');
+    });
+    */
+    /*
+    define(function (require) {
+        window.http = require('http-promises/browser');
+    });
+    */
+
+    /*
+    define(['require', 'http-promises/browser'], function (require) {
+        //window.http = require('http-promises/browser');
+    });*/
+        
+    //const http = require('http-promises/browser')
+
     console.log("Using ComputerVisionaries regression model");
     var socket = io.connect('http://' + document.domain + ':' + location.port);
     socket.on('connect', function() {
@@ -71,21 +90,24 @@
      * @returns {Array.<T>} The eyes gray level histogram
      */
     function getEyeFeats(eyes) {
-        var resizedLeft = webgazer.util.resizeEye(eyes.left, resizeWidth, resizeHeight);
-        var resizedright = webgazer.util.resizeEye(eyes.right, resizeWidth, resizeHeight);
+        var resizedLeft = webgazer.util.resizeEye(eyes.left, 24, 24);
+        var resizedright = webgazer.util.resizeEye(eyes.right, 24, 24);
 
         var leftGray = webgazer.util.grayscale(resizedLeft.data, resizedLeft.width, resizedLeft.height);
         var rightGray = webgazer.util.grayscale(resizedright.data, resizedright.width, resizedright.height);
 
-        var histLeft = [];
-        webgazer.util.equalizeHistogram(leftGray, 5, histLeft);
-        var histRight = [];
-        webgazer.util.equalizeHistogram(rightGray, 5, histRight);
+        //var histLeft = [];
+        //webgazer.util.equalizeHistogram(leftGray, 5, histLeft);
+        //var histRight = [];
+        //webgazer.util.equalizeHistogram(rightGray, 5, histRight);
 
-        var leftGrayArray = Array.prototype.slice.call(histLeft);
-        var rightGrayArray = Array.prototype.slice.call(histRight);
-
-        return leftGrayArray.concat(rightGrayArray);
+        //var leftGrayArray = Array.prototype.slice.call(histLeft);
+        //var rightGrayArray = Array.prototype.slice.call(histRight);
+        var myDat = { 
+            left: leftGray,
+            right: rightGray
+        }
+        return myDat//leftGrayArray.concat(rightGrayArray);
     }
 
     //TODO: still usefull ???
@@ -114,6 +136,7 @@
      * @constructor
      */
     webgazer.reg.ComputerVisionariesReg = function() {
+
         this.screenXClicksArray = new webgazer.util.DataWindow(dataWindow);
         this.screenYClicksArray = new webgazer.util.DataWindow(dataWindow);
         this.eyeFeaturesClicks = new webgazer.util.DataWindow(dataWindow);
@@ -162,6 +185,38 @@
         eyes.right.patch = Array.from(eyes.right.patch.data);
     }
 
+
+    function httpRequest(url, payload) {
+      // Return a new promise.
+      return new Promise(function(resolve, reject) {
+        // Do the usual XHR stuff
+        var req = new XMLHttpRequest();
+        req.open('POST', url, true);
+        req.setRequestHeader("Content-Type", "application/json");
+
+        req.onload = function() {
+          // This is called even on 404 etc
+          // so check the status
+          if (req.status == 200) {
+            // Resolve the promise with the response text
+            resolve(req.response);
+          }
+          else {
+            // Otherwise reject with the status text
+            // which will hopefully be a meaningful error
+            reject(Error(req.statusText));
+          }
+        };
+
+        // Handle network errors
+        req.onerror = function() {
+          reject(Error("Network Error"));
+        };
+
+        // Make the request
+        req.send(payload);
+      });
+    }
     /**
      * Try to predict coordinates from pupil data
      * after apply linear regression on data set
@@ -172,13 +227,23 @@
         if (!eyesObj || this.eyeFeaturesClicks.length === 0) {
             return null;
         }
+        /*
+        var params = {
+            host: document.domain,
+            port: location.port,
+            method: 'POST',
+            path: '/api/predict'
+        }*/
 
-        socket.emit()
+        //console.log(eyesObj);
+        dat = getEyeFeats(eyesObj)
+        //console.log(dat)
+        return httpRequest("/api/predict", JSON.stringify(dat));
+        //console.log('Got the data!');
+        //console.log(data);
 
-        return {
-            x: 200,
-            y: 200
-        }
+        //return await test();
+
         /*
         var acceptTime = performance.now() - this.trailTime;
         var trailX = [];

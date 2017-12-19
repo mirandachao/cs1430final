@@ -120,8 +120,23 @@
             width: rightWidth,
             height: rightHeight
         };
-
         eyeObjs.positions = positions;
+
+        //eyeObjs.left.blink = false;
+        //eyeObjs.right.blink = false;
+        //webgazer.pupil.getPupils(eyeObjs);
+        //var leftPupilX = eyeObjs.left.pupil[0][0];
+        //console.log(leftPupilX);
+        //var leftPupilY = eyeObjs.left.pupil[0][1];
+        //var rightPupilX = eyeObjs.right.pupil[0][0];
+        //var rightPupilY = eyeObjs.right.pupil[0][1];
+        //var leftSquare = webgazer.util.grayscale(imageCanvas.getContext('2d').getImageData(Math.round(leftPupilX)-12, Math.round(leftPupilY)-12, 24, 24), 24,24);
+        //var rightSquare = webgazer.util.grayscale(imageCanvas.getContext('2d').getImageData(Math.round(rightPupilX)-12, Math.round(rightPupilY)-12, 24, 24),24,24);
+        
+
+        //eyeObjs.left.square = leftSquare
+        //eyeObjs.right.square = rightSquare
+
 
         return eyeObjs;
     };

@@ -12,7 +12,10 @@
     "jsdoc": "*"
   },
   "dependencies": {
+    "browserify": "^14.5.0",
     "flask": "^0.2.10",
+    "http": "0.0.0",
+    "http-promises": "^1.2.2",
     "tensorflow": "^0.5.0"
   }
 }
