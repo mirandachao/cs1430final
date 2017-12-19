@@ -64,14 +64,7 @@ for subDir in trf:
 			tmpL = im.crop(boxLeft).convert('L')
 			tmpR = im.crop(boxRight).convert('L')
 			leftEye = np.asarray(tmpL, dtype= np.uint8)
-			#print(leftEye.shape)
-			#tmpL.save('./pics/' + str(gg) + "testL.png")
 			rightEye = np.asarray(tmpR, dtype= np.uint8)
-			#tmpR.save('./pics/'+str(gg)+"testR.png")
-			#gg += 1
-			#if (gg==1000):
-			#	break
-			#	exit()
 
 			tobiiEyeGazeX = (tobiiLeftEyeGazeX + tobiiRightEyeGazeX) / 2
 			tobiiEyeGazeY = (tobiiLeftEyeGazeY + tobiiRightEyeGazeY) / 2
@@ -149,13 +142,7 @@ for subDir in tef:
 			tmpL = im.crop(boxLeft).convert('L')
 			tmpR = im.crop(boxRight).convert('L')
 			leftEye = np.asarray(tmpL, dtype= np.uint8)
-			#print(leftEye.shape)
-			#tmpL.save('./pics/' + str(gg) + "testL.png")
 			rightEye = np.asarray(tmpR, dtype= np.uint8)
-			#tmpR.save('./pics/'+str(gg)+"testR.png")
-			#gg += 1
-			#if (gg==100):
-			#	exit()
 
 			tobiiEyeGazeX = (tobiiLeftEyeGazeX + tobiiRightEyeGazeX) / 2
 			tobiiEyeGazeY = (tobiiLeftEyeGazeY + tobiiRightEyeGazeY) / 2
@@ -196,15 +183,3 @@ for i in range(len(leftGuessesX)):
 err = err/numbTestImgs
 
 print("Final pixel error on test: ", err)
-
-
-
-#guesses= x.eval(np.array(leftArrX), np.array(leftAnsX), "leftX")
-#print(guesses)
-
-
-
-#x = net()
-#x.set()
-
-

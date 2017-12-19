@@ -4,6 +4,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
+#Old neural network (Method 1). See writeup for description.
 class netOld1():
 
 	def __init__(self):
@@ -103,16 +104,11 @@ class netOld1():
 		return [inpt, ans, W1, b1, l1Out, L1Out, L1Drop, W2, b2, l2Out, L2Out, L2Drop, \
 		 W3, b3, out, loss, sgd, train_op]
 
-
-
-
+#Old neural network (Method 2). See writeup for description.
 class netOld2():
 
 	def __init__(self):
 		self.hiddenSz1 = 16
-		#self.hiddenSz2 = 25
-		#self.keepPrb1 = 0.9
-		#self.keepPrb2 = 0.3
 		self.learning_rate = 0.03
 		self.rows = 24
 		self.cols = 24
@@ -126,6 +122,7 @@ class netOld2():
 
 		self.outputSz = 1
 
+	#Trains net
 	def train(self, inny, ansy, label):
 		inpt, ans, wc1, conv1, avg, newRowSize, newColSize, matMulShape, W1, b1, l1Out, W2, b2, out, loss, sgd, train_op = self.model1(self.batchSz)
 
@@ -140,10 +137,8 @@ class netOld2():
 			avgLoss = 0.0
 			for i in xrange(numbBatches):
 				lowInd = i*self.batchSz
-				#print(lowInd)
 				diction = {inpt: inny[lowInd:lowInd+self.batchSz,:,:,:], ans: ansy[lowInd:lowInd+self.batchSz]}
 				_, losses, outy = session.run([train_op, loss, wc1], feed_dict=diction)
-				#print(outy[0,:,:,0])
 
 				avgLoss += losses
 				if (i%(8000/self.batchSz) == 0):
@@ -152,6 +147,7 @@ class netOld2():
 
 		save_path = saver.save(session, "./weights/"+label)
 
+	#Evaluates on test set
 	def eval(self, inny, ansy, label):
 		tf.reset_default_graph()
 
@@ -164,8 +160,6 @@ class netOld2():
 		saver.restore(sess, "./weights/"+label)
 		print "Evaluating the", label
 		diction = {inpt: inny, ans: ansy}
-		#avgLoss = lossOut/len(inny)
-		#print("Avg dist from truth : %s" % avgLoss)
 		return sess.run(out, diction)
 
 
@@ -193,104 +187,94 @@ class netOld2():
 		train_op = sgd.minimize(loss)
 		return [inpt, ans, wc1, conv1, avg, newRowSize, newColSize, matMulShape, W1, b1, l1Out, W2, b2, out, loss, sgd, train_op]
 
-
+#Final model (Method 3). See writeup.
 class net():
 
-        def __init__(self):
-                self.hiddenSz1 = 16
-                #self.hiddenSz2 = 25
-                #self.keepPrb1 = 0.9
-                #self.keepPrb2 = 0.3
-                self.learning_rate = 0.03
-                self.rows = 24
-                self.cols = 24
-                self.conv1Sz = 5
-                self.conv1Channels = 8
-                self.avgPoolSz = 4
-                self.strideSz = 4
-                self.channelsIn = 1
-                self.batchSz = 1
-                self.trainingEpochs = 1
+	def __init__(self):
+		self.hiddenSz1 = 16
+		self.learning_rate = 0.03
+		self.rows = 24
+		self.cols = 24
+		self.conv1Sz = 5
+		self.conv1Channels = 8
+		self.avgPoolSz = 4
+		self.strideSz = 4
+		self.channelsIn = 1
+		self.batchSz = 1
+		self.trainingEpochs = 1
 
-                self.outputSz = 1
+		self.outputSz = 1
 
-        def train(self, inny, posy, ansy, label):
-                inpt, ans, pos, wc1, conv1, avg, newRowSize, newColSize, matMulShape, W1, b1, l1Out, W2, b2, val, wVal, wPos, out, loss, sgd, train_op = self.model1(self.batchSz)
+    def train(self, inny, posy, ansy, label):
+        inpt, ans, pos, wc1, conv1, avg, newRowSize, newColSize, matMulShape, W1, b1, l1Out, W2, b2, val, wVal, wPos, out, loss, sgd, train_op = self.model1(self.batchSz)
 
-                saver = tf.train.Saver()
+        saver = tf.train.Saver()
 
-                session = tf.Session()
-                session.run(tf.global_variables_initializer())
-                print "Training the", label
-                numbBatches = int(np.floor(len(inny)/self.batchSz))
-                for j in range(self.trainingEpochs):
-                        print "Training Epoch: ", j
-                        avgLoss = 0.0
-                        for i in xrange(numbBatches):
-                                lowInd = i*self.batchSz
-                                #print(lowInd)
-                                diction = {inpt: inny[lowInd:lowInd+self.batchSz,:,:,:], ans: ansy[lowInd:lowInd+self.batchSz], pos: posy[lowInd:lowInd+self.batchSz]}
-                                _, losses, outy = session.run([train_op, loss, wVal], feed_dict=diction)
-                                #print(outy)
-
-                                avgLoss += np.sqrt(losses)
-                                if (i%(8000/self.batchSz) == 0):
-                                        print "Percent complete: ", int((i/float(numbBatches))*100)
-                        print "Loss: ", avgLoss/(numbBatches*self.batchSz)
-
-                save_path = saver.save(session, "./weights/"+label)
-
-        def eval(self, inny, posy, ansy, label):
-                tf.reset_default_graph()
-
-                inpt, ans, pos, wc1, conv1, avg, newRowSize, newColSize, matMulShape, W1, b1, l1Out, W2, b2, val, wVal, wPos, out, loss, sgd, train_op = self.model1(self.batchSz)
-
-                saver = tf.train.Saver()
-
-                sess = tf.Session()
-		toBeReturned = np.zeros([len(inny)])
-                saver.restore(sess, "./weights/"+label)
-                print "Evaluating the", label
-		numbBatches = int(np.floor(len(inny)/self.batchSz))
+        session = tf.Session()
+        session.run(tf.global_variables_initializer())
+        print "Training the", label
+        numbBatches = int(np.floor(len(inny)/self.batchSz))
+        for j in range(self.trainingEpochs):
+                print "Training Epoch: ", j
+                avgLoss = 0.0
                 for i in xrange(numbBatches):
-                	lowInd = i*self.batchSz
-                	#print(lowInd)
-                	diction = {inpt: inny[lowInd:lowInd+self.batchSz,:,:,:], ans: ansy[lowInd:lowInd+self.batchSz], pos: posy[lowInd:lowInd+self.batchSz]}
-			#print(sess.run(out,diction))
-			#exit()
-			toBeReturned[lowInd:lowInd+self.batchSz] = sess.run(out, diction)
-                #diction = {inpt: inny, ans: ansy, pos: posy}
-                #avgLoss = lossOut/len(inny)
-                #print("Avg dist from truth : %s" % avgLoss)
-                #return sess.run(out, diction)
+                        lowInd = i*self.batchSz
+                        #print(lowInd)
+                        diction = {inpt: inny[lowInd:lowInd+self.batchSz,:,:,:], ans: ansy[lowInd:lowInd+self.batchSz], pos: posy[lowInd:lowInd+self.batchSz]}
+                        _, losses, outy = session.run([train_op, loss, wVal], feed_dict=diction)
+                        #print(outy)
+
+                        avgLoss += np.sqrt(losses)
+                        if (i%(8000/self.batchSz) == 0):
+                                print "Percent complete: ", int((i/float(numbBatches))*100)
+                print "Loss: ", avgLoss/(numbBatches*self.batchSz)
+
+        save_path = saver.save(session, "./weights/"+label)
+
+    def eval(self, inny, posy, ansy, label):
+		tf.reset_default_graph()
+
+		inpt, ans, pos, wc1, conv1, avg, newRowSize, newColSize, matMulShape, W1, b1, l1Out, W2, b2, val, wVal, wPos, out, loss, sgd, train_op = self.model1(self.batchSz)
+
+		saver = tf.train.Saver()
+
+		sess = tf.Session()
+		toBeReturned = np.zeros([len(inny)])
+		saver.restore(sess, "./weights/"+label)
+		print "Evaluating the", label
+		numbBatches = int(np.floor(len(inny)/self.batchSz))
+		for i in xrange(numbBatches):
+			lowInd = i*self.batchSz
+			diction = {inpt: inny[lowInd:lowInd+self.batchSz,:,:,:], ans: ansy[lowInd:lowInd+self.batchSz], pos: posy[lowInd:lowInd+self.batchSz]}
+		toBeReturned[lowInd:lowInd+self.batchSz] = sess.run(out, diction)
 		return toBeReturned
 
 
-        def model1(self, size):
-                inpt = tf.placeholder(tf.float32, [size, self.rows, self.cols, self.channelsIn])
-                ans = tf.placeholder(tf.float32, [size])
+	def model1(self, size):
+		inpt = tf.placeholder(tf.float32, [size, self.rows, self.cols, self.channelsIn])
+		ans = tf.placeholder(tf.float32, [size])
 		pos = tf.placeholder(tf.float32, [size])
 
-                wc1 = tf.Variable(tf.random_normal([self.conv1Sz, self.conv1Sz, self.channelsIn, self.conv1Channels], stddev=.1))
-                conv1 = tf.nn.conv2d(inpt, wc1, [1,1,1,1], 'VALID') #con1 shape is [batchSz, 20, 20, channels]
-                avg = tf.nn.pool(conv1, [self.avgPoolSz, self.avgPoolSz], 'AVG', 'VALID', strides=[self.strideSz, self.strideSz])
-                newRowSize = (self.rows-(self.conv1Sz-1))/self.avgPoolSz
-                newColSize = (self.cols-(self.conv1Sz-1))/self.avgPoolSz
-                matMulShape = tf.reshape(avg, [size, newRowSize * newColSize * self.conv1Channels])
+		wc1 = tf.Variable(tf.random_normal([self.conv1Sz, self.conv1Sz, self.channelsIn, self.conv1Channels], stddev=.1))
+		conv1 = tf.nn.conv2d(inpt, wc1, [1,1,1,1], 'VALID') #con1 shape is [batchSz, 20, 20, channels]
+		avg = tf.nn.pool(conv1, [self.avgPoolSz, self.avgPoolSz], 'AVG', 'VALID', strides=[self.strideSz, self.strideSz])
+		newRowSize = (self.rows-(self.conv1Sz-1))/self.avgPoolSz
+		newColSize = (self.cols-(self.conv1Sz-1))/self.avgPoolSz
+		matMulShape = tf.reshape(avg, [size, newRowSize * newColSize * self.conv1Channels])
 
-                W1 = tf.Variable(tf.random_normal([newRowSize * newColSize * self.conv1Channels, self.hiddenSz1], stddev=.1))
-                b1 = tf.Variable(tf.random_normal([self.hiddenSz1], stddev=.1))
-                l1Out = tf.matmul(matMulShape, W1) + b1
-                W2 = tf.Variable(tf.random_normal([self.hiddenSz1, self.outputSz], stddev=.1))
-                b2 = tf.Variable(tf.random_normal([self.outputSz], stddev=.1))
+		W1 = tf.Variable(tf.random_normal([newRowSize * newColSize * self.conv1Channels, self.hiddenSz1], stddev=.1))
+		b1 = tf.Variable(tf.random_normal([self.hiddenSz1], stddev=.1))
+		l1Out = tf.matmul(matMulShape, W1) + b1
+		W2 = tf.Variable(tf.random_normal([self.hiddenSz1, self.outputSz], stddev=.1))
+		b2 = tf.Variable(tf.random_normal([self.outputSz], stddev=.1))
 		val = tf.nn.sigmoid(tf.matmul(l1Out,W2)+b2)
 		wVal = tf.Variable(tf.random_normal([size], stddev=.1))
-                wPos = tf.Variable(tf.random_normal([size], stddev=.1))
+		wPos = tf.Variable(tf.random_normal([size], stddev=.1))
 		out = tf.multiply(wVal, val) + tf.multiply(wPos, pos)
 
-                #loss corresponds to euclid dist
-                loss = tf.reduce_sum(tf.square(ans-out))
-                sgd = tf.train.AdamOptimizer(self.learning_rate)
-                train_op = sgd.minimize(loss)
-                return [inpt, ans, pos, wc1, conv1, avg, newRowSize, newColSize, matMulShape, W1, b1, l1Out, W2, b2, val, wVal, wPos, out, loss, sgd, train_op]
+		#loss corresponds to euclid dist
+		loss = tf.reduce_sum(tf.square(ans-out))
+		sgd = tf.train.AdamOptimizer(self.learning_rate)
+		train_op = sgd.minimize(loss)
+		return [inpt, ans, pos, wc1, conv1, avg, newRowSize, newColSize, matMulShape, W1, b1, l1Out, W2, b2, val, wVal, wPos, out, loss, sgd, train_op]
 
