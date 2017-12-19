@@ -7,7 +7,22 @@ A nonfunctional, but running version of the model is included in the codebase.
 ## Project Structure
 
 /build
-* contains the 
+* Contains the built javascript module
+* Run ./build_library to build
+
+/dependecies
+* Stores libraries: clmtrackr, object detection, etc
+* Util functions
+
+/src
+* Contains the Javascript source code that builds to /build
+
+/tfCode
+* Contains the various experiments using TensorFlow
+
+/app
+* Contains the full stack webapp that integrates the TensorFlow model with the WebGazer webpage
+* See README contained in this directory for instructions on how to run it.
 
 ## Who We Are
 
